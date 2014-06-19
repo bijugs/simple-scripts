@@ -1,7 +1,7 @@
 #
 #  Script to install a single node Kafka instance using chef-solo
-#  This is quick hack for development VM set-up and does its job but not robust enough
-#  Assumed this is a fresh node with nothing on it including JAVA
+#  This is quick hack for development VM set-up and does its job but not robust enough.
+#  Assumes that the install is on a fresh node with OS installed and nothing on it including JAVA
 #  Tested on Ubuntu and can be modified for other flavors of Linux
 #
 # set -x
@@ -68,6 +68,11 @@ if [ ! -d chef-repo ]; then
   # Change the zookeeper data directory from /tmp to /opt/kafka
   #
   sed -i 's/\/tmp/\/opt\/kafka/g' ./kafka/attributes/zookeeper.rb
+  #
+  # Change the port on which broker listens to 9092 which is used by default in kafka standard install 
+  # For some reason the community cookbook changes to 6667 in server.properties but not on producer.properties
+  #
+  sed -i 's/6667/9092/g' ./kafka/attributes/default.rb
   cd ..
   #
   # Create the chef solo config file solo.rb
