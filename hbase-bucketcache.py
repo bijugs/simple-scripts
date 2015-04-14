@@ -1,6 +1,19 @@
 #
 # Python script to calculate the values to enable HBase Bucket cache
-# 
+#
+# Author: Biju Nair
+# Github: https://github.com/bijugs
+#
+#License
+#=======
+#
+#[Apache 2.0 license](http://www.apache.org/licenses/LICENSE-2.0)
+#
+#Unless required by applicable law or agreed to in writing, software distributed
+#under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+#CONDITIONS OF ANY KIND, either expressed or implied. See the license for the specific
+#language governing permissions and limitations under the license. 
+#
 def is_number(val):
     try:
         float(val)

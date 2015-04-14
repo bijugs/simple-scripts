@@ -4,6 +4,19 @@
 #  Assumes that the install is on a fresh node with OS installed and nothing on it including JAVA
 #  Tested on Ubuntu and can be modified for other flavors of Linux
 #
+#  Author: Biju Nair
+#  Github: https://github.com/bijugs
+#
+#  License
+#  =======
+#
+#  [Apache 2.0 license](http://www.apache.org/licenses/LICENSE-2.0)
+#
+#  Unless required by applicable law or agreed to in writing, software distributed
+#  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+#  CONDITIONS OF ANY KIND, either expressed or implied. See the license for the specific
+#  language governing permissions and limitations under the license.
+#
 # set -x
 
 #

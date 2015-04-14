@@ -1,8 +1,27 @@
 #
-# LWRP provider for hdfs directory resource
+#  Chef LWRP provider for hdfs directory resource
+#
+#  Author: Biju Nair
+#  Github: https://github.com/bijugs
+#
+#  License
+#  =======
+#
+#  [Apache 2.0 license](http://www.apache.org/licenses/LICENSE-2.0)
+#
+#  Unless required by applicable law or agreed to in writing, software distributed
+#  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+#  CONDITIONS OF ANY KIND, either expressed or implied. See the license for the specific
+#  language governing permissions and limitations under the license.
 #
 require 'chef/log'
 require 'webhdfs'
+#
+# This method is required for LWRP so that any notifications from 
+# resources in the LWRP will be considered from LWRP resource collection
+# and not from the individual resource which is notifying.
+#
+use_inline_resources
 #
 # To enable -W/--why-run option of chef-client
 #
@@ -12,9 +31,16 @@ end
 #
 # Method automatically called by Chef during the client execution phase
 # Can be used to initialize variables and also verify the current state
-# Need to be updated to dybnamically pass the name node IP and port
 #
 def load_current_resource
+  #
+  # Not taking the typical approach of creating a current_resource will make
+  # this LWRP usable with any cookbook without changes. We are creating 
+  # instance variables for each attribute which would be available in the
+  # @current_resource object if we had created one.
+  #
+  #-- @current_resource = Chef::Resource::BcpcHdfsdir.new(new_resource.name)
+  #-- new_resource.user == nil ? @current_resource.user = ENV['USER'] : @current_resource.user = new_resource.user
   new_resource.user == nil ? @user = ENV['USER'] : @user = new_resource.user
   nnaddress = new_resource.namenode
   nnport = new_resource.nnport
@@ -58,8 +84,9 @@ action :create do
     Chef::Log::info("Directory #{ @path } exits; create action not taken")
   else
     converge_by("Create #{ @new_resource }") do
-     @client.mkdir(@path,'permission' => @mode)
+      @client.mkdir(@path,'permission' => @mode)
     end
+    new_resource.updated_by_last_action(true)
   end
 end
 #
@@ -72,6 +99,7 @@ action :delete do
     converge_by("Delete #{ @new_resource }") do
      @client.delete(@path)
     end
+    new_resource.updated_by_last_action(true)
   end
 end
 #
@@ -79,16 +107,17 @@ end
 #
 action :chown do
   if @tuser == nil
-    Chef::Log::info "user and group need to be provided to perform chown"
+    Chef::Log::fatal "target user need to be provided to perform chown"
   elsif (!dir_exists?(@path))
-    Chef::Log::info("Directory #{ @path } doesn't exist; chown action not taken")
+    Chef::Log::Error("Directory #{ @path } doesn't exist; chown action not taken")
+  else
     if @tgroup == nil
       @tgroup = @meta_data["group"]
     end
-  else
     converge_by("chown #{ @new_resource }") do
      @client.chown(@path, 'owner' => @tuser, 'group' => @tgroup)
     end
+    new_resource.updated_by_last_action(true)
   end
 end
 #
@@ -96,13 +125,14 @@ end
 #
 action :chmod do
   if @omode == nil
-    Chef::Log::info "mode need to be provided to perform chmod"
+    Chef::Log::fatal "target mode need to be provided to perform chmod"
   elsif (!dir_exists?(@path))
-    Chef::Log::info("Directory #{ @path } doesn't exist; chmod action not taken")
+    Chef::Log::Error("Directory #{ @path } doesn't exist; chmod action not taken")
   else
     converge_by("chmod #{ @new_resource }") do
      @client.chmod(@path, @mode)
     end
+    new_resource.updated_by_last_action(true)
   end
 end
 #
@@ -110,13 +140,14 @@ end
 #
 action :chgrp do
   if @tgroup == nil
-    Chef::Log::info "target group need to be provided to perform chgrp"
+    Chef::Log::fatal "target group need to be provided to perform chgrp"
   elsif (!dir_exists?(@path))
     Chef::Log::info("Directory #{ @path } doesn't exist; chmod action not taken")
   else
     converge_by("chgrp #{ @new_resource }") do
      @client.chown(@path, 'group' => @tgroup)
     end
+    new_resource.updated_by_last_action(true)
   end
 end
 #
@@ -124,12 +155,13 @@ end
 #
 action :rename do
   if @tpath == nil
-    Chef::Log.info "Target path is empty and need to be set for rename action"
+    Chef::Log.Fatal "Target path is empty and need to be set for rename action"
   elsif (!dir_exists?(@path))
-    Chef::Log::info("Source directory #{ @path } doesn't exist; rename action not taken")
+    Chef::Log::Error("Source directory #{ @path } doesn't exist; rename action not taken")
   else
     converge_by("rename #{ @new_resource }") do
       @client.rename(@path, @tpath)
     end
+    new_resource.updated_by_last_action(true)
   end
 end
