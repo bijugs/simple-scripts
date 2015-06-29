@@ -76,6 +76,9 @@ end
 #
 # Currently expects the table name as the first argument
 # >hbase shell hbase_mv_regions.rb table_name
+# Will list the region servers and the number of primar regions in each
+# If user want to distribute primary regions in a round robin basis
+# >hbase shell hbase_mv_regions.rb table_name dist
 #
 if ARGV.length() < 1
   puts "Expecting atleast one argument: table name"
@@ -86,14 +89,17 @@ else
   tables.each do |tableName|
     if tableName == ARGV[0]
       puts "****************************"
-      puts "****************************"
       puts "Requested table :"+tableName
       puts "****************************"
       begin
-        #priRegions = getPrimaryRegionEncodedNames(tableName)
-        #distributePrimaryRegions(priRegions)
-        #sleep 20
-        getPrimaryDistribution(tableName)
+          priRegions = getPrimaryRegionEncodedNames(tableName)
+          if (ARGV.length() > 1 && ARGV[1] == 'dist')
+            puts "Distribute table primary regions"
+            distributePrimaryRegions(priRegions)
+            sleep 30
+          else
+            getPrimaryDistribution(tableName)
+          end
       rescue org.apache.hadoop.hbase.TableNotFoundException
         true
       end
@@ -101,4 +107,3 @@ else
   end
 end
 exit
-
