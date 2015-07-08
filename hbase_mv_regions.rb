@@ -26,7 +26,9 @@ def getPrimaryRegionEncodedNames(tableName)
                                 t.getEndKeys[t.getEndKeys.size-1])
   priRegions = Array.new
   regions.each do |r|
-    priRegions << r.getRegionInfo().getEncodedName()
+    if (r.getRegionInfo().getReplicaId() == 0)
+      priRegions << r.getRegionInfo().getEncodedName()
+    end
   end
   priRegions
 end
@@ -39,16 +41,22 @@ def distributePrimaryRegions(priRegions)
   c = HBaseConfiguration.new()
   admin = HBaseAdmin.new(c)
   servers = Array.new()
+  dServers = Array.new()
+  dServers = admin.getClusterStatus.getDeadServerNames()
   serv = admin.getClusterStatus.getServers()
   serv.each do |s|
-    servers << s.getServerName()
+    if (!dServers.include?(s))
+      servers << s.getServerName()
+    end
   end
   count=0
+  totRS = servers.size()
   priRegions.each do |r|
-    puts r+" will move to "+servers[count%13]
-    move r,servers[count%13]
+    puts r+" will move to "+servers[count%totRS]
+    move r,servers[count%totRS]
     count+=1
   end
+  puts priRegions.size().to_s() + "primary regions moved"
 end
 
 #
@@ -73,13 +81,6 @@ def getPrimaryDistribution(tableName)
   end
 end
 
-#
-# Currently expects the table name as the first argument
-# >hbase shell hbase_mv_regions.rb table_name
-# Will list the region servers and the number of primar regions in each
-# If user want to distribute primary regions in a round robin basis
-# >hbase shell hbase_mv_regions.rb table_name dist
-#
 if ARGV.length() < 1
   puts "Expecting atleast one argument: table name"
 else
@@ -96,7 +97,6 @@ else
           if (ARGV.length() > 1 && ARGV[1] == 'dist')
             puts "Distribute table primary regions"
             distributePrimaryRegions(priRegions)
-            sleep 30
           else
             getPrimaryDistribution(tableName)
           end
@@ -107,3 +107,4 @@ else
   end
 end
 exit
+
