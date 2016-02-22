@@ -1,0 +1,45 @@
+<workflow-app xmlns='uri:oozie:workflow:0.5' name="major_compact_wf">
+   <global>
+      <job-tracker>${jobTracker}</job-tracker>
+      <name-node>${nameNode}</name-node>
+      <configuration>
+         <property>
+            <name>mapred.job.queue.name</name>
+            <value>${queueName}</value>
+         </property>
+      </configuration>
+   </global>
+   <start to="major_compact"/>
+   <action name="major_compact">
+      <shell xmlns="uri:oozie:shell-action:0.3">
+         <configuration>
+            <property>
+              <name>oozie.launcher.mapreduce.map.memory.mb</name>
+              <value>${mapMemoryMB}</value>
+            </property>
+         </configuration>
+         <exec>${majorCompactScriptPath}/${majorCompactScriptName}</exec>
+         <argument>${tableName}</argument>
+         <argument>${hdfsLogDir}</argument>
+         <argument>${timestamp()}</argument>
+         <file>${majorCompactScriptPath}/${majorCompactScriptName}#${majorCompactScriptName}</file>
+         <capture-output/>
+      </shell>
+      <ok to="logOozieId"/>
+      <error to="logOozieId"/>
+   </action>
+   <action name="logOozieId">
+      <shell xmlns="uri:oozie:shell-action:0.3">
+         <exec>${majorCompactScriptPath}/${logOozieIdScriptName}</exec>
+         <argument>${wf:id()}</argument>
+         <argument>${hdfsLogDir}</argument>
+         <file>${majorCompactScriptPath}/${logOozieIdScriptName}#${logOozieIdScriptName}</file>
+      </shell>
+      <ok to="end"/>
+      <error to="fail"/>
+   </action>
+   <kill name="fail">
+      <message>Major compaction failed [${wf:errorMessage(wf:lastErrorNode())}]</message>
+   </kill>
+   <end name="end"/>
+</workflow-app>

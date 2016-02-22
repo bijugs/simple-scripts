@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+<!--
+   <property>
+    <name>hbase.startstop.key.compare</name>
+    <value>r0:r3,r3:r4,r4:</value>
+    <description>a:b or a: or :b</description>
+  </property>
+-->
+
+  <property>
+    <name>hbase.max.threads.compare</name>
+    <value>3</value>
+  </property>
+
+  <property>
+    <name>hbase.compare.versions</name>
+    <value>2</value>
+  </property>
+
+  <property>
+    <name>hbase.compare.table1</name>
+    <value>test</value>
+  </property>
+
+  <property>
+    <name>hbase.error.count.compare</name>
+    <value>2</value>
+  </property>
+
+  <property>
+    <name>hbase.compare.table2</name>
+    <value>test-copy</value>
+  </property>
+
+  <property>
+    <name>hbase.zookeeper.quorum.compare.cluster1</name>
+    <value>localhost</value>
+  </property>
+
+  <property>
+    <name>hbase.zookeeper.quorum.compare.cluster2</name>
+    <value>localhost</value>
+  </property>
+
+  <property>
+    <name>hbase.table.timestamp.compare</name>
+    <value>false</value>
+  </property>
+
+<!--
+  <property>
+    <name>hbase.security.authentication.compare.cluster1</name>
+    <value>kerberos</value>
+  </property>
+
+  <property>
+    <name>hbase.security.authentication.compare.cluster2</name>
+    <value>kerberos</value>
+  </property>
+
+  <property>
+    <name>hbase.master.kerberos.principal.compare.cluster1</name>
+    <value>hbase/_HOST@Atest.btest.COM</value>
+  </property>
+
+  <property>
+    <name>hbase.master.kerberos.principal.compare.cluster2</name>
+    <value>hbase/_HOST@Atest.btest.COM</value>
+  </property>
+
+  <property>
+    <name>hbase.regionserver.kerberos.principal.compare.cluster1</name>
+    <value>hbase/_HOST@Atest.btest.COM</value>
+  </property>
+
+  <property>
+    <name>hbase.regionserver.kerberos.principal.compare.cluster2</name>
+    <value>hbase/_HOST@Atest.btest.COM</value>
+  </property>
+
+  <property>
+    <name>hbase.kerberos.principal.compare.cluster2</name>
+    <value>test@Atest.btest.COM</value>
+  </property>
+
+  <property>
+    <name>hbase.kerberos.keytab.compare.cluster2</name>
+    <value>dev.keytab</value>
+  </property>
+-->
+</configuration>

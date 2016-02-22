@@ -1,0 +1,20 @@
+<coordinator-app name="major_compact"
+   frequency="${coord:days(1)}"
+   start="${starttime}" end="${endtime}" timezone="${timezone}"
+   xmlns="uri:oozie:coordinator:0.1">
+    <controls>
+      <concurrency>1</concurrency>
+      <execution>FIFO</execution>
+    </controls>
+    <action>
+      <workflow>
+         <app-path>${nameNode}${rootDir}/workflow</app-path>
+         <configuration>
+            <property>
+               <name>HBaseMajorCompact</name>
+               <value>'${coord:user()}: Kicking off HBase Major Compact WF'</value>
+            </property>
+         </configuration>
+      </workflow>
+   </action>
+</coordinator-app>
