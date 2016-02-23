@@ -38,14 +38,17 @@ public class HBaseAdminTool {
 
 	public static void main(String args[]) throws Exception {
 		conf = HBaseConfiguration.create();
+                // The following two properties can be from hbase-site.xml
 		conf.set("hbase.zookeeper.quorum", "localhost");
 		conf.set("hbase.rootdir", "hdfs://localhost:9000/hbase");
+                // This need to be set
 		conf.set("fs.defaultFS", "hdfs://localhost:9000/");
 		//
 		// to resolve java.io.IOException: No FileSystem for scheme: hdfs
 		//
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+                //UserGroupInformation.setConfiguration(conf);
 		conn = ConnectionFactory.createConnection(conf);
 		adm = conn.getAdmin();
 
@@ -103,46 +106,46 @@ public class HBaseAdminTool {
 		}
 	}
 
-	private static void calculateLocality() {
-		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-			System.out.print("Enter the table name :");
-			String tbl = br.readLine();
-			String fileRoot = conn.getConfiguration().get("hbase.rootdir");
-			List<HRegionInfo> regions = adm.getTableRegions(TableName.valueOf(tbl));
-			String nameSpace = TableName.valueOf(tbl).getNamespaceAsString();
-			Set<byte[]> families = conn.getTable(TableName.valueOf(tbl)).getTableDescriptor().getFamiliesKeys();
-			int noRegions = regions.size();
-			FileSystem fs = FileSystem.get(conf);
-			int matchCount = 0;
-			for (int i = 0; i < noRegions; i++) {
-				String regionName = regions.get(i).getEncodedName();
-				String host = MetaTableAccessor.getRegionLocation(conn, regions.get(i)).getHostname();
-				for (byte[] family : families) {
-					RemoteIterator<LocatedFileStatus> ri = fs.listFiles(new Path(fileRoot+"/data/" + nameSpace + "/"
-							+ tbl + "/" + regionName + "/" + Bytes.toString(family)), true);
-					while (ri.hasNext()) {
-						BlockLocation[] bl = ri.next().getBlockLocations();	
-						for (int j = 0; j < bl.length; j++) {
-							String[] hosts = bl[j].getHosts();
-							for (int k = 0; k < hosts.length; k++) {
-								System.out.println("Hosts "+hosts[k]);
-								if (host.equalsIgnoreCase(hosts[k])) {
-									matchCount++;
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-			System.out.println(matchCount/noRegions * 100 + " Percentage of data is local");
-		} catch (IOException e) {
-			System.out.println("Error calculating the locality of table data");
-			e.printStackTrace();
-		}
-	}
-
+        private static void calculateLocality() {
+                try {
+                        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                        System.out.print("Enter the table name :");
+                        String tbl = br.readLine();
+                        String fileRoot = conn.getConfiguration().get("hbase.rootdir");
+                        List<HRegionInfo> regions = adm.getTableRegions(TableName.valueOf(tbl));
+                        String nameSpace = TableName.valueOf(tbl).getNamespaceAsString();
+                        Set<byte[]> families = conn.getTable(TableName.valueOf(tbl)).getTableDescriptor().getFamiliesKeys();
+                        int noRegions = regions.size();
+                        float noBlocks = 0;
+                        FileSystem fs = FileSystem.get(conf);
+                        float matchCount = 0;
+                        for (int i = 0; i < noRegions; i++) {
+                                String regionName = regions.get(i).getEncodedName();
+                                String host = MetaTableAccessor.getRegionLocation(conn, regions.get(i)).getHostname();
+                                for (byte[] family : families) {
+                                        RemoteIterator<LocatedFileStatus> ri = fs.listFiles(new Path(fileRoot+"/data/" + nameSpace + "/"
+                                                        + tbl + "/" + regionName + "/" + Bytes.toString(family)), true);
+                                        while (ri.hasNext()) {
+                                                BlockLocation[] bl = ri.next().getBlockLocations();
+                                                noBlocks += bl.length;
+                                                for (int j = 0; j < bl.length; j++) {
+                                                        String[] hosts = bl[j].getHosts();
+                                                        for (int k = 0; k < hosts.length; k++) {
+                                                                if (host.equalsIgnoreCase(hosts[k])) {
+                                                                        matchCount++;
+                                                                        break;
+                                                                }
+                                                        }
+                                                }
+                                        }
+                                }
+                        }
+                        System.out.println(matchCount/noBlocks * 100 + " Percentage of data is local");
+                } catch (IOException e) {
+                        System.out.println("Error calculating the locality of table data");
+                        e.printStackTrace();
+                }
+        }
 	private static void getDistribution() {
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
