@@ -29,6 +29,10 @@ import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.RegionLocator;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
+import org.apache.hadoop.hbase.client.coprocessor.LongColumnInterpreter;
+import org.apache.hadoop.hbase.regionserver.HRegion;
 import org.apache.hadoop.hbase.util.Bytes;
 
 public class HBaseAdminTool {
@@ -38,17 +42,17 @@ public class HBaseAdminTool {
 
 	public static void main(String args[]) throws Exception {
 		conf = HBaseConfiguration.create();
-                // The following two properties can be from hbase-site.xml
+		// The following two properties can be from hbase-site.xml
 		conf.set("hbase.zookeeper.quorum", "localhost");
 		conf.set("hbase.rootdir", "hdfs://localhost:9000/hbase");
-                // This need to be set
+		// This need to be set
 		conf.set("fs.defaultFS", "hdfs://localhost:9000/");
 		//
 		// to resolve java.io.IOException: No FileSystem for scheme: hdfs
 		//
 		conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 		conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
-                //UserGroupInformation.setConfiguration(conf);
+		// UserGroupInformation.setConfiguration(conf);
 		conn = ConnectionFactory.createConnection(conf);
 		adm = conn.getAdmin();
 
@@ -97,6 +101,14 @@ public class HBaseAdminTool {
 				System.out.println("Calculate data locality of table");
 				calculateLocality();
 				break;
+			case "rowcount":
+				System.out.println("Find row count of a table");
+				countRows();
+				break;
+			case "mergereg":
+				System.out.println("Merge regions in a table");
+				mergeRegions(adm);
+				break;
 			case "quit":
 			default:
 				System.out.println("Shutting down");
@@ -105,47 +117,99 @@ public class HBaseAdminTool {
 			}
 		}
 	}
+	
+	private static void mergeRegions(Admin adm) {
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			System.out.println("Enter name of table :");
+			String tbl = br.readLine();
+			System.out.println("Reading regions in the table"+tbl);
+			List<HRegionInfo> regions = adm.getTableRegions(TableName.valueOf(tbl));
+			int noRegions = regions.size();
+			byte[] startRegion = null;
+			for (int i = 0; i < noRegions; i++) {
+				HRegionInfo region = regions.get(i);
+				System.out.println(region.getEncodedName() + " " + region.getRegionNameAsString() + " "
+						+ MetaTableAccessor.getRegionLocation(conn, region).getHostname());
+				if (i == 0)
+					startRegion = region.getEncodedNameAsBytes();
+				else {
+					adm.mergeRegions(startRegion, region.getEncodedNameAsBytes(), false);;
+				}
+					
+			}
+		} catch (IOException e) {
+			System.out.println("IOException in mergeRegions method");
+			e.printStackTrace();
+		} 
+	}
+	
+	private static void countRows() {
+		try {
+			BufferedReader bf = new BufferedReader(new InputStreamReader(System.in));
+			System.out.println("Enter name of table :");
+			String tbl = bf.readLine();
+			System.out.println("Counting rows for table "+tbl);
+			HColumnDescriptor[] hCD = conn.getTable(TableName.valueOf(tbl)).getTableDescriptor().getColumnFamilies();
+			AggregationClient aggregationClient = new AggregationClient(conf);
+			Scan scan = new Scan();
+			for (int i = 0; i < hCD.length; i++) {
+				scan.addFamily(hCD[i].getName());
+			}
+			long rowCount = aggregationClient.rowCount(TableName.valueOf(tbl), new LongColumnInterpreter(), scan);
+			System.out.println("Number of rows in the table is "+rowCount);
+			aggregationClient.close();
+		} catch (IOException e) {
+			System.out.println("Exception when reading data from sysin.");
+			e.printStackTrace();
+		} catch (Throwable e) {
+			System.out.println("Exception is aggregationClient.");
+			e.printStackTrace();
+		}
 
-        private static void calculateLocality() {
-                try {
-                        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-                        System.out.print("Enter the table name :");
-                        String tbl = br.readLine();
-                        String fileRoot = conn.getConfiguration().get("hbase.rootdir");
-                        List<HRegionInfo> regions = adm.getTableRegions(TableName.valueOf(tbl));
-                        String nameSpace = TableName.valueOf(tbl).getNamespaceAsString();
-                        Set<byte[]> families = conn.getTable(TableName.valueOf(tbl)).getTableDescriptor().getFamiliesKeys();
-                        int noRegions = regions.size();
-                        float noBlocks = 0;
-                        FileSystem fs = FileSystem.get(conf);
-                        float matchCount = 0;
-                        for (int i = 0; i < noRegions; i++) {
-                                String regionName = regions.get(i).getEncodedName();
-                                String host = MetaTableAccessor.getRegionLocation(conn, regions.get(i)).getHostname();
-                                for (byte[] family : families) {
-                                        RemoteIterator<LocatedFileStatus> ri = fs.listFiles(new Path(fileRoot+"/data/" + nameSpace + "/"
-                                                        + tbl + "/" + regionName + "/" + Bytes.toString(family)), true);
-                                        while (ri.hasNext()) {
-                                                BlockLocation[] bl = ri.next().getBlockLocations();
-                                                noBlocks += bl.length;
-                                                for (int j = 0; j < bl.length; j++) {
-                                                        String[] hosts = bl[j].getHosts();
-                                                        for (int k = 0; k < hosts.length; k++) {
-                                                                if (host.equalsIgnoreCase(hosts[k])) {
-                                                                        matchCount++;
-                                                                        break;
-                                                                }
-                                                        }
-                                                }
-                                        }
-                                }
-                        }
-                        System.out.println(matchCount/noBlocks * 100 + " Percentage of data is local");
-                } catch (IOException e) {
-                        System.out.println("Error calculating the locality of table data");
-                        e.printStackTrace();
-                }
-        }
+	}
+
+	private static void calculateLocality() {
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			System.out.print("Enter the table name :");
+			String tbl = br.readLine();
+			String fileRoot = conn.getConfiguration().get("hbase.rootdir");
+			List<HRegionInfo> regions = adm.getTableRegions(TableName.valueOf(tbl));
+			String nameSpace = TableName.valueOf(tbl).getNamespaceAsString();
+			Set<byte[]> families = conn.getTable(TableName.valueOf(tbl)).getTableDescriptor().getFamiliesKeys();
+			int noRegions = regions.size();
+			float noBlocks = 0;
+			FileSystem fs = FileSystem.get(conf);
+			float matchCount = 0;
+			for (int i = 0; i < noRegions; i++) {
+				String regionName = regions.get(i).getEncodedName();
+				String host = MetaTableAccessor.getRegionLocation(conn, regions.get(i)).getHostname();
+				for (byte[] family : families) {
+					RemoteIterator<LocatedFileStatus> ri = fs.listFiles(new Path(fileRoot + "/data/" + nameSpace + "/"
+							+ tbl + "/" + regionName + "/" + Bytes.toString(family)), true);
+					while (ri.hasNext()) {
+						BlockLocation[] bl = ri.next().getBlockLocations();
+						noBlocks += bl.length;
+						for (int j = 0; j < bl.length; j++) {
+							String[] hosts = bl[j].getHosts();
+							for (int k = 0; k < hosts.length; k++) {
+								if (host.equalsIgnoreCase(hosts[k])) {
+									matchCount++;
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+			System.out.println(matchCount / noBlocks * 100 + " Percentage of data is local");
+		} catch (IOException e) {
+			System.out.println("Error calculating the locality of table data");
+			e.printStackTrace();
+		}
+	}
+
 	private static void getDistribution() {
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -297,6 +361,7 @@ public class HBaseAdminTool {
 					tblDesc.addFamily(cfDesc);
 					System.out.println("Enter column family name, null when done:");
 				}
+                                tblDesc.setConfiguration("cache","small");
 				adm.createTable(tblDesc);
 				if (adm.isTableAvailable(TableName.valueOf("test")))
 					System.out.println("Table created successfully");

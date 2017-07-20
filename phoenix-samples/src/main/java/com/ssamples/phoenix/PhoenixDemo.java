@@ -18,7 +18,7 @@ public class PhoenixDemo
         System.out.println("getting connection");
         Statement stmt = null;
         ResultSet rset = null;
-        Connection con = DriverManager.getConnection("jdbc:phoenix:zkquorum:2181:/hbase:krb_principal:keytabfile");
+        Connection con = DriverManager.getConnection("jdbc:phoenix:localhost:2181:/hbase");
         System.out.println("connected: " + con.toString());
         stmt = con.createStatement();
         stmt.executeUpdate("upsert into TBL values ('IBM',100)");
@@ -26,11 +26,11 @@ public class PhoenixDemo
         stmt.executeUpdate("upsert into TBL values ('GOOG',5.5)");
         stmt.executeUpdate("delete from TBL where ticker='IBM'");
         con.commit();
-        PreparedStatement statement = con.prepareStatement("select * from TBL");
+        PreparedStatement statement = con.prepareStatement("select location, count(1) as count from details where ticker in (select ticker from tbl) group by location order by location desc");
         rset = statement.executeQuery();
         while (rset.next()) {
-                System.out.println(rset.getString("ticker"));
-                System.out.println(rset.getString("price"));
+            System.out.println(rset.getString("location"));
+            System.out.println(rset.getString("count"));
         }
         statement.close();
         con.close();
