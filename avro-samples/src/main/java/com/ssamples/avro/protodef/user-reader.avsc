@@ -1,0 +1,11 @@
+{"namespace": "com.ssamples.avro",
+ "type": "record",
+ "name": "User",
+ "fields": [
+     {"name": "name", "type": "string"},
+     {"name": "favorite_number", "type": ["int", "null"]},
+     {"name": "favorite_color", "type": ["string", "null"]},
+     {"name": "favorite_food", "type": ["string", "null"]},
+     {"name": "favorite_city", "type": ["string", "null"], "default":"unknown"}
+ ]
+}
