@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+  <property>
+    <name>hbase.rpc.timeout</name>
+    <value>6000</value>
+  </property>
+  <property>
+    <name>hbase.client.scanner.timeout.period</name>
+    <value>6000</value>
+  </property>
+  <property>
+    <name>hbase.client.scanner.max.result.size</name>
+    <value>600</value>
+  </property>
+  <property>
+    <name>hbase.server.scanner.max.result.size</name>
+    <value>600</value>
+  </property>
+  <property>
+    <name>hbase.client.scanner.caching</name>
+    <value>600</value>
+  </property>
+</configuration>
