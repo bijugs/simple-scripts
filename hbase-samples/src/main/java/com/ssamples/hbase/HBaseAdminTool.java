@@ -3,7 +3,9 @@ package com.ssamples.hbase;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -109,6 +111,10 @@ public class HBaseAdminTool {
 				System.out.println("Merge regions in a table");
 				mergeRegions(adm);
 				break;
+			case "findreg":
+				System.out.println("Find region in a table for the key");
+				findRegion(adm);
+				break;
 			case "quit":
 			default:
 				System.out.println("Shutting down");
@@ -116,6 +122,33 @@ public class HBaseAdminTool {
 				System.exit(0);
 			}
 		}
+	}
+	
+	private static void findRegion(Admin adm) {
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			System.out.println("Enter name of table :");
+			String tbl = br.readLine();
+			System.out.println("Enter the key value :");
+			String key = br.readLine();
+			System.out.println("Reading regions in the table"+tbl);
+			List<HRegionInfo> regions = adm.getTableRegions(TableName.valueOf(tbl));
+			int noRegions = regions.size();
+			for (int i = 0; i < noRegions; i++) {
+				HRegionInfo region = regions.get(i);
+				System.out.println(region.getEncodedName() + " " + region.getRegionNameAsString() + " "
+						+ MetaTableAccessor.getRegionLocation(conn, region).getHostname());
+				System.out.println("Keys "+key+" "+new String(region.getEndKey()));
+				if (key.toString().compareTo(new String(region.getEndKey())) < 0) {
+					System.out.println("Found the region");
+					return;
+				}
+			}
+			System.out.println("Found the region");
+		} catch (IOException e) {
+			System.out.println("IOException in findRegion method");
+			e.printStackTrace();
+		} 
 	}
 	
 	private static void mergeRegions(Admin adm) {
