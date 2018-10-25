@@ -16,7 +16,7 @@ public class HiveJdbcClient {
   public static void usage(Options options) {
     System.out.println("Hive Server and port are required");
     HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp( "HdfsKTest", options );
+    formatter.printHelp( "HiveJdbcClient", options );
     return;
   }
 
@@ -28,6 +28,7 @@ public class HiveJdbcClient {
     String keyTab = null;
     String krbRealm = null;
     String hiveDB = "default";
+    String hdfsLoadFile = null;
     boolean isSecure = false;
     CommandLineParser parser = new GnuParser();
     Options options = new Options();
@@ -38,6 +39,7 @@ public class HiveJdbcClient {
     options.addOption( "u", "username", true, "User name in Keytab" );
     options.addOption( "k", "keytab", true, "Keytab file path" );
     options.addOption( "d", "database", true, "Hive database, default:default" );
+    options.addOption( "l", "loadfile", true, "HDFS file to laod" );
     if (args.length < 2) {
        HiveJdbcClient.usage(options);
        return;
@@ -79,6 +81,11 @@ public class HiveJdbcClient {
           hiveDB = line.getOptionValue("database");
           System.out.println("Will use Hive DB"+hiveDB);
       }
+      if( line.hasOption( "loadfile" ) ) {
+          // print the database name to be used
+          hdfsLoadFile = line.getOptionValue("loadfile");
+          System.out.println("Will load data from file "+hdfsLoadFile);
+      }
       if (hiveServer == null || hivePort == null) {
           HiveJdbcClient.usage(options);
           return;
@@ -105,14 +112,40 @@ public class HiveJdbcClient {
       Statement stmt = con.createStatement();
       String tableName = "testHiveNonTableBN";
       stmt.execute("drop table " + tableName);
+      stmt.execute("create table "+ tableName + "(key int, value string) row format delimited fields terminated by ',' stored as textfile");
+      String sql = "show tables '" + tableName + "'";
+      System.out.println("Running: " + sql);
+      ResultSet res = stmt.executeQuery(sql);
+      if (res.next()) {
+          System.out.println(res.getString(1));
+      }
+      // describe table
+      sql = "describe " + tableName;
+      System.out.println("Running: " + sql);
+      res = stmt.executeQuery(sql);
+      while (res.next()) {
+          System.out.println(res.getString(1) + "\t" + res.getString(2));
+      }
+      if (hdfsLoadFile != null) {
+          sql = "load data inpath '" + hdfsLoadFile + "' into table " + tableName;
+          System.out.println("Running: " + sql);
+          stmt.execute(sql);
+          // select * query
+          sql = "select * from " + tableName;
+          System.out.println("Running: " + sql);
+          res = stmt.executeQuery(sql);
+          while (res.next()) {
+            System.out.println(String.valueOf(res.getInt(1)) + "\t" + res.getString(2));
+          }
+      }
     } catch (ClassNotFoundException e) {
-          // TODO Auto-generated catch block
           e.printStackTrace();
           System.exit(1);
     } catch (Exception ex) {
           ex.printStackTrace();
     } finally {
-          con.close();
+          if (con != null)
+              con.close();
     }
   }
 }

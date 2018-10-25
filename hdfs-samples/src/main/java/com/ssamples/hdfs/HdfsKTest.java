@@ -1,11 +1,16 @@
 package com.ssamples.hdfs;
 
+import java.io.BufferedWriter;
+import java.io.DataOutputStream;
+import java.io.OutputStreamWriter;
+
 import org.apache.commons.cli.*;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FSDataOutputStream;
 
 public class HdfsKTest {
 
@@ -23,6 +28,7 @@ public class HdfsKTest {
         String keyTab = null;
         String hdfsPath = null;
         boolean isSecure = false;
+        FileSystem fs = null;
         CommandLineParser parser = new GnuParser();
         Options options = new Options();
         options.addOption( "s", "secure", false, "secure cluster" );
@@ -83,14 +89,24 @@ public class HdfsKTest {
                       UserGroupInformation.loginUserFromSubject(null);
                  }
               }
-              FileSystem fs = FileSystem.get(conf);
+              fs = FileSystem.get(conf);
 
               fs.createNewFile(new Path(hdfsPath+"/test"));
+
+              if (!fs.exists(new Path(hdfsPath+"/data.txt"))) {
+                  FSDataOutputStream outStream = fs.create(new Path(hdfsPath+"/data.txt"),false);
+                  BufferedWriter bw = new BufferedWriter( new OutputStreamWriter( outStream, "UTF-8" ) );   
+                  bw.write("1,Ant\n");
+                  bw.write("2,Bat");
+                  bw.close();
+              }
 
               FileStatus[] status = fs.listStatus(new Path(hdfsPath));
               for(int i=0;i<status.length;i++){
                   System.out.println(status[i].getPath());
               }
+              fs.delete(new Path(hdfsPath+"/test"));
+              fs.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
