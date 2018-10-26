@@ -6,11 +6,13 @@ import java.io.OutputStreamWriter;
 
 import org.apache.commons.cli.*;
 import org.apache.hadoop.conf.*;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.ipc.RemoteException;
+import org.apache.hadoop.ipc.StandbyException;
+import org.apache.hadoop.security.UserGroupInformation;
 
 public class HdfsKTest {
 
@@ -23,7 +25,7 @@ public class HdfsKTest {
 
 
     public static void main(String args[]) {
-        String nameNode = null;
+        String[] nameNodes = new String[2];
         String userName = null;
         String keyTab = null;
         String hdfsPath = null;
@@ -32,7 +34,8 @@ public class HdfsKTest {
         CommandLineParser parser = new GnuParser();
         Options options = new Options();
         options.addOption( "s", "secure", false, "secure cluster" );
-        options.addOption( "n", "namenode", true, "Namenode host:port" );
+        options.addOption( "n1", "namenode1", true, "Namenode host:port" );
+        options.addOption( "n2", "namenode2", true, "Namenode host:port" );
         options.addOption( "u", "username", true, "User name in Keytab" );
         options.addOption( "k", "keytab", true, "Keytab file path" );
         options.addOption( "p", "path", true, "hdfs path to be used as root" );
@@ -48,10 +51,15 @@ public class HdfsKTest {
                   System.out.println("The cluster is secure");
                   isSecure = true;
               }
-              if( line.hasOption( "namenode" ) ) {
+              if( line.hasOption( "namenode1" ) ) {
                   // print the namenode host:port for the cluster
-                  nameNode = line.getOptionValue("namenode");
-                  System.out.println("Will connect to NN "+nameNode);
+                  nameNodes[0] = line.getOptionValue("namenode1");
+                  System.out.println("Will connect to NN "+nameNodes[0]);
+              }
+              if( line.hasOption( "namenode2" ) ) {
+                  // print the namenode host:port for the cluster
+                  nameNodes[1] = line.getOptionValue("namenode2");
+                  System.out.println("Will connect to NN "+nameNodes[1]);
               }
               if( line.hasOption( "username" ) ) {
                   // print the username for the keytab passed
@@ -68,7 +76,7 @@ public class HdfsKTest {
                   hdfsPath = line.getOptionValue("path");
                   System.out.println("Will use HDFS directory "+hdfsPath);
               }
-              if (nameNode == null || hdfsPath == null) {
+              if (nameNodes[0] == null || hdfsPath == null) {
                   HdfsKTest.usage(options);
                   return;
               }
@@ -76,7 +84,6 @@ public class HdfsKTest {
               Configuration conf = new Configuration();
               conf.set("fs.hdfs.impl",org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
               conf.set("fs.file.impl",org.apache.hadoop.fs.LocalFileSystem.class.getName());
-              conf.set("fs.defaultFS", "hdfs://"+nameNode);
               if (isSecure) {
                   System.out.println("Performing UGI login since the cluster is secure");
                   conf.set("hadoop.security.authentication", "Kerberos");
@@ -89,23 +96,37 @@ public class HdfsKTest {
                       UserGroupInformation.loginUserFromSubject(null);
                  }
               }
-              fs = FileSystem.get(conf);
+              for (String nameNode : nameNodes) {
+                  try {
+                      System.out.println("Namenode trying "+nameNode);
+                      if (nameNode == null)
+                         break;
+                      conf.set("fs.defaultFS", "hdfs://"+nameNode);
+                      fs = FileSystem.get(conf);
 
-              fs.createNewFile(new Path(hdfsPath+"/test"));
+                      fs.createNewFile(new Path(hdfsPath+"/test"));
 
-              if (!fs.exists(new Path(hdfsPath+"/data.txt"))) {
-                  FSDataOutputStream outStream = fs.create(new Path(hdfsPath+"/data.txt"),false);
-                  BufferedWriter bw = new BufferedWriter( new OutputStreamWriter( outStream, "UTF-8" ) );   
-                  bw.write("1,Ant\n");
-                  bw.write("2,Bat");
-                  bw.close();
+                      if (!fs.exists(new Path(hdfsPath+"/data.txt"))) {
+                          FSDataOutputStream outStream = fs.create(new Path(hdfsPath+"/data.txt"),false);
+                          BufferedWriter bw = new BufferedWriter( new OutputStreamWriter( outStream, "UTF-8" ) );   
+                          bw.write("1,Ant\n");
+                          bw.write("2,Bat");
+                          bw.close();
+                      }
+
+                      FileStatus[] status = fs.listStatus(new Path(hdfsPath));
+                      for(int i=0;i<status.length;i++){
+                          System.out.println(status[i].getPath());
+                      }
+                      fs.delete(new Path(hdfsPath+"/test"));
+                      break;
+                  } catch (RemoteException rEx) {
+                       if (rEx.getClassName().equals("org.apache.hadoop.ipc.StandbyException"))
+                           System.out.println("Caught StandbyException "+rEx.getClassName());             
+                       else
+                          throw rEx;
+                  }
               }
-
-              FileStatus[] status = fs.listStatus(new Path(hdfsPath));
-              for(int i=0;i<status.length;i++){
-                  System.out.println(status[i].getPath());
-              }
-              fs.delete(new Path(hdfsPath+"/test"));
               fs.close();
         } catch (Exception e) {
             e.printStackTrace();
