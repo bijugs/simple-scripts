@@ -23,7 +23,6 @@ public class HdfsKTest {
         return;
     }
 
-
     public static void main(String args[]) {
         String[] nameNodes = new String[2];
         String userName = null;
@@ -108,6 +107,12 @@ public class HdfsKTest {
 
                       if (!fs.exists(new Path(hdfsPath+"/data.txt"))) {
                           FSDataOutputStream outStream = fs.create(new Path(hdfsPath+"/data.txt"),false);
+                          BufferedWriter bw = new BufferedWriter( new OutputStreamWriter( outStream, "UTF-8" ) );   
+                          bw.write("1,Ant\n");
+                          bw.write("2,Bat");
+                          bw.close();
+                      } else {
+                          FSDataOutputStream outStream = fs.append(new Path(hdfsPath+"/data.txt"));
                           BufferedWriter bw = new BufferedWriter( new OutputStreamWriter( outStream, "UTF-8" ) );   
                           bw.write("1,Ant\n");
                           bw.write("2,Bat");
