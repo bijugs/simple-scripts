@@ -315,7 +315,7 @@ public class HbaseDataCompare implements Callable<Boolean> {
 
   private static void usage() {
     System.out.println("Usage:");
-    System.out.println("java com.bloomberg.hbase.sample.HbaseDataCompare hbase-compare.xml");
+    System.out.println("java com.ssamples.hbase.HbaseDataCompare hbase-compare.xml");
     System.out.println("**************************************************************");
     System.out.println("the following properties in hbase-compare.xml will be used");
     System.out.println("hbase.compare.table1 & 2: Names of tables to be compared");

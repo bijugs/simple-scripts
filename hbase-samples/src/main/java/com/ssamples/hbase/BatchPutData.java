@@ -52,8 +52,8 @@ public class BatchPutData {
                 if (isSecure) {
                     config.set("hadoop.security.authentication", "Kerberos");
                     config.set("hbase.security.authentication", "Kerberos");
-                    config.set("hbase.master.kerberos.principal", "hbase/_HOST@ADDEV.BLOOMBERG.COM");
-                    config.set("hbase.regionserver.kerberos.principal", "hbase/_HOST@ADDEV.BLOOMBERG.COM");
+                    config.set("hbase.master.kerberos.principal", "hbase/_HOST@REALM");
+                    config.set("hbase.regionserver.kerberos.principal", "hbase/_HOST@REALM");
                     UserGroupInformation.setConfiguration(config);
                     if (principal != null && keyTab != null)
                        UserGroupInformation.loginUserFromKeytab(principal,keyTab);
