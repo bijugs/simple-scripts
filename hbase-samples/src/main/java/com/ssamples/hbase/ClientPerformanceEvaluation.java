@@ -1,5 +1,6 @@
 package com.ssamples.hbase;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -23,7 +24,8 @@ public class ClientPerformanceEvaluation extends PerformanceEvaluation {
             super(conf);
 	}
 	
-	static void checkSecurity(Queue<String> args) {
+	static String[] checkSecurity(Queue<String> args) {
+            ArrayList<String> argm = new ArrayList<String>();
 	    String cmd = null;
 	    while ((cmd = args.poll()) != null) {
 	      final String clientMode = "--clientmode";
@@ -61,13 +63,21 @@ public class ClientPerformanceEvaluation extends PerformanceEvaluation {
                 krbRealm = cmd.substring(realm.length());
                 continue;
               }
+              argm.add(cmd);
            }		
+           String[] peArgs = new String[argm.size()];
+	   int i = 0;
+	   for (String arg : argm) {
+	       peArgs[i] = arg;
+	       i++;
+	   }
+	   return peArgs;
 	}
 	
 	public static void main(final String[] args) throws Exception {
 	    Queue<String> argv = new LinkedList<>();
 	    argv.addAll(Arrays.asList(args));
-            checkSecurity(argv);
+            String[] peArgs = checkSecurity(argv);
 	    System.out.println("ClientMode "+isClientMode+" zkQuorum "+zkQuorum+" principal "+krbPrincipal+" keytab "+krbKeytab);
             Configuration config = HBaseConfiguration.create();
             if (isClientMode && !nomapred) {
@@ -86,7 +96,7 @@ public class ClientPerformanceEvaluation extends PerformanceEvaluation {
                 UserGroupInformation.loginUserFromKeytab(krbPrincipal, krbKeytab);
               }
             }
-	    int res = ToolRunner.run(new PerformanceEvaluation(HBaseConfiguration.create()), args);
+	    int res = ToolRunner.run(new PerformanceEvaluation(HBaseConfiguration.create()), peArgs);
 	    System.exit(res);
         }
 }
