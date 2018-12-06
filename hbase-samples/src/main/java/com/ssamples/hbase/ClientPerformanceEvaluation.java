@@ -85,7 +85,6 @@ public class ClientPerformanceEvaluation extends PerformanceEvaluation {
               System.exit(1);
             } else if (zkQuorum != null) {
               config.set("hbase.zookeeper.quorum", zkQuorum);
-              System.out.println("Setting the zkQuorum passed");
             }
             if (isSecure) {
               config.set("hadoop.security.authentication", "Kerberos");
@@ -97,7 +96,6 @@ public class ClientPerformanceEvaluation extends PerformanceEvaluation {
                 UserGroupInformation.loginUserFromKeytab(krbPrincipal, krbKeytab);
               }
             }
-            System.out.println("zkQuorum set in config "+config.get("hbase.zookeeper.quorum"));
 	    int res = ToolRunner.run(new PerformanceEvaluation(config), peArgs);
 	    System.exit(res);
         }
