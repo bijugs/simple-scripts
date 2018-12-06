@@ -84,7 +84,7 @@ public class ClientPerformanceEvaluation extends PerformanceEvaluation {
               System.out.println("For client mode can only run as nomapred");
               System.exit(1);
             } else if (zkQuorum != null) {
-              config.set("hadoop.zookeeper.quorum", zkQuorum);
+              config.set("hbase.zookeeper.quorum", zkQuorum);
             }
             if (isSecure) {
               config.set("hadoop.security.authentication", "Kerberos");
@@ -96,7 +96,7 @@ public class ClientPerformanceEvaluation extends PerformanceEvaluation {
                 UserGroupInformation.loginUserFromKeytab(krbPrincipal, krbKeytab);
               }
             }
-	    int res = ToolRunner.run(new PerformanceEvaluation(HBaseConfiguration.create()), peArgs);
+	    int res = ToolRunner.run(new PerformanceEvaluation(config), peArgs);
 	    System.exit(res);
         }
 }
