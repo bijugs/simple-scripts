@@ -56,6 +56,7 @@ public class ClientPerformanceEvaluation extends PerformanceEvaluation {
               final String nmr = "--nomapred";
               if (cmd.startsWith(nmr)) {
                 nomapred = true;
+                argm.add(cmd);
                 continue;
               }
               final String realm = "--realm=";
