@@ -12,17 +12,17 @@ import org.apache.hadoop.conf.Configuration;
 
 public abstract class HbasePerfTester {
 
-  private ArrayList<Histogram> latencyHist;
-  private ArrayList<Long> totalTime;
-  private ArrayList<Long> totalRows;
-  private Configuration conf;
+  private static ArrayList<Histogram> latencyHist;
+  private static ArrayList<Long> totalTime;
+  private static ArrayList<Long> totalRows;
+  private static Configuration conf;
 
   public HbasePerfTester(Configuration conf) {
     System.out.println("Setting up the configuration");
     this.conf = conf;
   }
 
-  public boolean createStatsCollectors(int threadCount) {
+  public static boolean createStatsCollectors(int threadCount) {
     UniformReservoir r;
     Histogram hist;
     latencyHist = new ArrayList<Histogram>(threadCount);
@@ -36,13 +36,13 @@ public abstract class HbasePerfTester {
     return true;
   } 
 
-  public boolean addLatency(int latency, int threadNum) {
+  public static boolean addLatency(int latency, int threadNum) {
     Histogram hist = latencyHist.get(threadNum);
     hist.update(latency);
     return true;
   }
 
-  public boolean generateStats() {
+  public static boolean generateStats() {
     for (int i = 0; i < latencyHist.size(); i++) {
       System.out.println("Generating stats for thread "+ i);
       Snapshot s = latencyHist.get(i).getSnapshot();
