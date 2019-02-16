@@ -1,4 +1,4 @@
-package com.ssample.hbase;
+package com.ssamples.hbase;
 
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.UserGroupInformation;
