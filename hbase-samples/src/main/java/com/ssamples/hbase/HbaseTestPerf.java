@@ -6,7 +6,8 @@ public class HbaseTestPerf{
 
   public static void main(String args[]) throws Exception {
     Configuration conf = new Configuration();
-    HbasePerfTester tester = (HbasePerfTester) Class.forName("com.ssamples.hbase.HbasePerfTest1").getConstructor(Configuration.class).newInstance(conf);
+    //HbasePerfTester tester = (HbasePerfTester) Class.forName("com.ssamples.hbase.HbasePerfTest1").getConstructor(Configuration.class).newInstance(conf);
+    HbasePerfTester tester = (HbasePerfTester) Class.forName("com.ssamples.hbase.HbasePerfTest1").getConstructor(Configuration.class,Integer.class).newInstance(conf,1);
     //HbasePerfTester tester = (HbasePerfTester) Class.forName("com.ssamples.hbase.HbasePerfTest1").newInstance();
     tester.execute();
     tester.generateStats();

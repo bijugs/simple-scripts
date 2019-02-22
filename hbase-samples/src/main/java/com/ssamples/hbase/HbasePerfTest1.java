@@ -22,6 +22,10 @@ public class HbasePerfTest1 extends HbasePerfTester {
     super(conf);
   }
 
+  public HbasePerfTest1(Configuration conf,int i) {
+    super(conf,i);
+  }
+
   public boolean execute(){
     if (createStatsCollectors(2)){
       System.out.println("Implement code to run multiple threads creating a single connection");

@@ -22,6 +22,11 @@ public abstract class HbasePerfTester {
     this.conf = conf;
   }
 
+  public HbasePerfTester(Configuration conf, int i) {
+    System.out.println("Setting up the configuration");
+    this.conf = conf;
+  }
+
   public static boolean createStatsCollectors(int threadCount) {
     UniformReservoir r;
     Histogram hist;

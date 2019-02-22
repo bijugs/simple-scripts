@@ -1,0 +1,22 @@
+<configuration>
+  <property>
+    <name>hadoop.security.authentication</name>
+    <value>Kerberos</value>
+  </property>
+  <property>
+    <name>hbase.security.authentication</name>
+    <value>Kerberos</value>
+  </property>
+  <property>
+    <name>hbase.master.kerberos.principal</name>
+    <value>hbase/_HOST@ADDEV.BLOOMBERG.COM</value>
+  </property>
+  <property>
+    <name>hbase.regionserver.kerberos.principal</name>
+    <value>hbase/_HOST@ADDEV.BLOOMBERG.COM</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.quorum</name>
+    <value>dnj2-bach-r1n14.bloomberg.com,dnj2-bach-r2n01.bloomberg.com,dnj2-bach-r3n13.bloomberg.com</value>
+  </property>
+</configuration>
