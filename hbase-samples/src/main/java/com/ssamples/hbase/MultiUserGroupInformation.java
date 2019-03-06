@@ -1,3 +1,5 @@
+package com.ssamples.hbase;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
