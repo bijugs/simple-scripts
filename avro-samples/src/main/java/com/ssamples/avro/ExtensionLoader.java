@@ -1,4 +1,4 @@
-package com.ssamples.hbase;
+package com.ssamples.avro;
 
 import java.io.File;  
 import java.lang.reflect.Constructor;  
@@ -9,22 +9,32 @@ import java.net.URLClassLoader;
 
 public class ExtensionLoader {
 
-  public void LoadClass(String classpath) throws ClassNotFoundException {
+  public void LoadClass(String classname) throws ClassNotFoundException {
     System.out.println("Class path "+System.getProperty("user.dir"));
-    File pluginsDir = new File(System.getProperty("user.dir")+"/target");
+    File pluginsDir = new File(System.getProperty("user.dir"));
     System.out.println("Directory "+pluginsDir);
     for (File jar : pluginsDir.listFiles()) {
       System.out.println("Jar "+jar);
       try {
-        ClassLoader loader = URLClassLoader.newInstance(
-            new URL[] { jar.toURL() },
-            getClass().getClassLoader()
-        );
-        Class clazz = Class.forName(classpath, true, loader);
+        //ClassLoader loader = URLClassLoader.newInstance(
+        //    new URL[] { jar.toURL() },
+        //    getClass().getClassLoader()
+        //);
+        ClassLoader loader = new URLClassLoader(new URL[] { new URL("file:///tmp/hbase-test.jar") });
+        //Class clazz = Class.forName(classpath, true, loader);
+        Class clazz = loader.loadClass(classname);
         String m = clazz.getDeclaredMethod("loginUserFromKeytab",
                                      String.class, String.class).getName();
-        System.out.println("clazz "+clazz+" "+m);
+        System.out.println("clazz "+clazz+" "+m+" "+clazz.hashCode());
         clazz.getDeclaredMethod("loginUserFromKeytab",
+                               String.class, String.class).invoke(null,"bach_tester@ADDEV.BLOOMBERG.COM","/home/bnair10/bach_tester.keytab");
+        ClassLoader loader1 = new URLClassLoader(new URL[] { new URL("file:///tmp/hbase-test.jar") });
+        //Class clazz = Class.forName(classpath, true, loader);
+        Class clazz1 = loader1.loadClass(classname);
+        String m1 = clazz1.getDeclaredMethod("loginUserFromKeytab",
+                                     String.class, String.class).getName();
+        System.out.println("clazz1 "+clazz1+" "+m1+" "+clazz1.hashCode());
+        clazz1.getDeclaredMethod("loginUserFromKeytab",
                                String.class, String.class).invoke(null,"bach_tester@ADDEV.BLOOMBERG.COM","/home/bnair10/bach_tester.keytab");
         return;
       } catch (ClassNotFoundException e) {
@@ -43,12 +53,14 @@ public class ExtensionLoader {
         e.printStackTrace();*/
       }
     }
-    throw new ClassNotFoundException("Class " + classpath
+    throw new ClassNotFoundException("Class " + classname
         + " wasn't found in directory " + System.getProperty("java.class.path") );
   }
 
   public static void main(String args[]) throws ClassNotFoundException {
     ExtensionLoader ext = new ExtensionLoader();
+    ext.LoadClass("org.apache.hadoop.security.UserGroupInformation");
+    ext = new ExtensionLoader();
     ext.LoadClass("org.apache.hadoop.security.UserGroupInformation");
   }
 }
