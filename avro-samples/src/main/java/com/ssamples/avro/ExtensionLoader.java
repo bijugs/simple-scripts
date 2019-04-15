@@ -9,7 +9,7 @@ import java.net.URLClassLoader;
 
 public class ExtensionLoader {
 
-  public void LoadClass(String classname) throws ClassNotFoundException {
+  public void LoadClass(String classname) throws ClassNotFoundException, Exception {
     System.out.println("Class path "+System.getProperty("user.dir"));
     File pluginsDir = new File(System.getProperty("user.dir"));
     System.out.println("Directory "+pluginsDir);
@@ -36,6 +36,7 @@ public class ExtensionLoader {
         System.out.println("clazz1 "+clazz1+" "+m1+" "+clazz1.hashCode());
         clazz1.getDeclaredMethod("loginUserFromKeytab",
                                String.class, String.class).invoke(null,"bach_tester@ADDEV.BLOOMBERG.COM","/home/bnair10/bach_tester.keytab");
+        Thread.sleep(600000);
         return;
       } catch (ClassNotFoundException e) {
         // There might be multiple JARs in the directory,
@@ -57,7 +58,7 @@ public class ExtensionLoader {
         + " wasn't found in directory " + System.getProperty("java.class.path") );
   }
 
-  public static void main(String args[]) throws ClassNotFoundException {
+  public static void main(String args[]) throws Exception {
     ExtensionLoader ext = new ExtensionLoader();
     ext.LoadClass("org.apache.hadoop.security.UserGroupInformation");
     ext = new ExtensionLoader();

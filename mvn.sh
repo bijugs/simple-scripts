@@ -1,4 +1,4 @@
 mvn -B archetype:generate \
   -DarchetypeGroupId=org.apache.maven.archetypes \
-  -DgroupId=com.ssamples.network \
-  -DartifactId=network-samples
+  -DgroupId=com.ssamples.hbase.stochasticbalancer \
+  -DartifactId=hbase-balancer

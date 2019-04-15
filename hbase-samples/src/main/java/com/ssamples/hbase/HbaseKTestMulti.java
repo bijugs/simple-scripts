@@ -15,7 +15,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 public class HbaseKTestMulti implements Runnable {
 
-  static HConnection conn = null;
+  static Connection conn = null;
   String threadName;
 
   HbaseKTestMulti(String name) {
