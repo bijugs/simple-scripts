@@ -369,7 +369,7 @@ public class StochasticLoadBalancer extends BaseLoadBalancer {
     //of all the regions in the table(s) (that's true today)
     // Keep track of servers to iterate through them.
     Cluster cluster = new Cluster(clusterState, loads, finder, rackManager, serversWeights);
-
+	cluster.printTableRegions();
     long startTime = EnvironmentEdgeManager.currentTime();
 
     initCosts(cluster);
@@ -443,7 +443,7 @@ public class StochasticLoadBalancer extends BaseLoadBalancer {
       }
     }
     long endTime = EnvironmentEdgeManager.currentTime();
-
+	cluster.printTableRegions();
     metricsBalancer.balanceCluster(endTime - startTime);
 
     // update costs metrics

@@ -996,30 +996,94 @@ public abstract class BaseLoadBalancer implements LoadBalancer {
       }
     }
     
-    int getRegionAllocationSkew() {
-    	int totalRegions = regions.length;
-    	float[] serverNodePercentage = new float[serverToWeight.length];
+    /*
+     * Calculate the skew in region allocation to region servers taking into account their "capacity"
+     */
+    double getRegionAllocationSkew() {
+    	int totalRegions = numRegions;
+    	float[] serverNodePercentage = new float[numServers];
     	float totalWeightedNodes = 0;
     	int maxWeight = 0;
-    	int skew = 0;
-    	for (int i = 0; i < serverToWeight.length; i++) {
+    	double skew = 0;
+    	/*
+    	 * Find the max resource from all the servers
+    	 */
+    	for (int i = 0; i < numServers; i++) {
     		if (serverToWeight[i] > maxWeight)
     			maxWeight = serverToWeight[i];
     	}
-
-    	for (int i = 0; i < serverToWeight.length; i++) {
+    	/*
+    	 * Calculate the proportion of resource in each cluster compared to max
+    	 */
+    	for (int i = 0; i < numServers; i++) {
     		totalWeightedNodes += (float)serverToWeight[i]/maxWeight;
     		serverNodePercentage[i] = (float)serverToWeight[i]/maxWeight;
     	}
+    	/*
+    	 *  Calculate the max number of regions in a server with max resource
+    	 */
     	float maxRegions = totalRegions/totalWeightedNodes; 
-    	float[] idealRegions = new float[serverToWeight.length];
+    	//float[] idealRegions = new float[serverToWeight.length];
+    	/*
+    	 *  Calculate the ideal number of regions in a server given the max 
+    	 *  number of regions that can be on node with the largest resource.
+    	 *  If a server hosts more than the ideal region count, then the diff
+    	 *  is considered as skew which is used to increase the cost.
+    	 */
     	for (int i = 0; i < regionsPerServer.length; i++) {
     		float idealRegionAllocation = serverNodePercentage[i] * maxRegions;
-    		idealRegions[i] = idealRegionAllocation;
+    		//idealRegions[i] = idealRegionAllocation;
     		if (idealRegionAllocation < regionsPerServer[i].length)
-    			skew += (regionsPerServer[i].length - idealRegionAllocation);
+    			skew += (regionsPerServer[i].length - idealRegionAllocation)/idealRegionAllocation;
     	}
     	return skew;
+    }
+    
+    /*
+     * Calculate the skew in allocation of table regions across nodes in a cluster
+     */
+    int getTableRegionAllocationSkew() {
+    	int[] tableRegions = new int[numServers];
+    	int tableRegionSum = 0;
+    	int skew = 0;
+    	/*
+    	 * Calculate the ideal number of regions per table each server should serve
+    	 * If a server has more than the ideal number of regions the diff is considered
+    	 * as a skew
+    	 */
+    	for (int i = 0; i < numTables; i++) {
+    		for (int j = 0; j < numServers; j++) {
+    			tableRegions[j] = numRegionsPerServerPerTable[j][i];
+    			tableRegionSum += tableRegions[j];
+    		}
+        	int idealRegionPerServer = tableRegionSum / numServers;
+        	if (idealRegionPerServer > 0) {
+        	   for (int j = 0; j < numServers; j++) {
+        		   if (tableRegions[j] > idealRegionPerServer)
+        			   skew += (tableRegions[j]  - idealRegionPerServer);
+        	   }
+        	}
+    		tableRegionSum = 0;
+    	}
+    	return skew;
+    }
+    
+    double[][] getTableServerRegionCount() {
+    	double[][] tableServerRegionCount = new double[numTables][numServers];
+    	for (int i = 0; i < numTables; i++) {
+    		for (int j = 0; j < numServers; j++) {
+    			tableServerRegionCount[i][j] = (double)numRegionsPerServerPerTable[j][i];
+    		}
+    	}
+    	return tableServerRegionCount;
+    }
+    
+    void printTableRegions() {
+    	for (int i = 0; i < numTables; i++) {
+    		for (int j = 0; j < numServers; j++){
+    			LOG.info("Table {} server {} regions {}", i, j, numRegionsPerServerPerTable[j][i]);
+    		}
+    	}
     }
 
     @VisibleForTesting

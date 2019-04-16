@@ -206,7 +206,9 @@ public class StochasticLoadBalancerNew extends BaseLoadBalancer {
       new MoveCostFunction(conf),
       localityCost,
       rackLocalityCost,
-      new TableSkewCostFunction(conf),
+      //new TableSkewCostFunction(conf),
+      new TableSkewCostFunctionNew(conf),
+      //new TableRegionSkewCostFunction(conf),
       new ServerResourceCostFunction(conf),
       regionReplicaHostCostFunction,
       regionReplicaRackCostFunction,
@@ -370,7 +372,8 @@ public class StochasticLoadBalancerNew extends BaseLoadBalancer {
     //of all the regions in the table(s) (that's true today)
     // Keep track of servers to iterate through them.
     Cluster cluster = new Cluster(clusterState, loads, finder, rackManager, serversWeights);
-
+	cluster.printTableRegions();
+	
     long startTime = EnvironmentEdgeManager.currentTime();
 
     initCosts(cluster);
@@ -444,7 +447,7 @@ public class StochasticLoadBalancerNew extends BaseLoadBalancer {
       }
     }
     long endTime = EnvironmentEdgeManager.currentTime();
-
+	cluster.printTableRegions();
     metricsBalancer.balanceCluster(endTime - startTime);
 
     // update costs metrics
@@ -1138,6 +1141,29 @@ public class StochasticLoadBalancerNew extends BaseLoadBalancer {
 	}
 	  
   }
+  
+
+  static class TableRegionSkewCostFunction extends CostFunction {
+	  
+	float multiplier = 50;
+	  
+	float getMultiplier() {
+	    return multiplier;
+	}
+
+	TableRegionSkewCostFunction(Configuration c) {
+		super(c);
+		// TODO Auto-generated constructor stub
+	}
+
+	@Override
+	double cost() {
+		// TODO Auto-generated method stub
+		return cluster.getTableRegionAllocationSkew();
+	}
+	  
+  }
+  
   /**
    * Given the starting state of the regions and a potential ending state
    * compute cost based upon the number of regions that have moved.
@@ -1278,6 +1304,28 @@ public class StochasticLoadBalancerNew extends BaseLoadBalancer {
 
       return scale(min, max, value);
     }
+  }
+  
+  static class TableSkewCostFunctionNew extends CostFunction {
+
+	    private static final String TABLE_SKEW_COST_KEY =
+	        "hbase.master.balancer.stochastic.tableSkewCost";
+	    private static final float DEFAULT_TABLE_SKEW_COST = 35;
+
+	    TableSkewCostFunctionNew(Configuration conf) {
+	      super(conf);
+	      this.setMultiplier(conf.getFloat(TABLE_SKEW_COST_KEY, DEFAULT_TABLE_SKEW_COST));
+	    }
+
+	    @Override
+	    double cost() {
+	      double cost = 0;
+          double[][] tableServerRegionCount = cluster.getTableServerRegionCount();
+          for (int i = 0; i < tableServerRegionCount.length; i++) {
+        	  cost += costFromArray(tableServerRegionCount[i]);
+          }
+	      return cost;
+	    }
   }
 
   /**

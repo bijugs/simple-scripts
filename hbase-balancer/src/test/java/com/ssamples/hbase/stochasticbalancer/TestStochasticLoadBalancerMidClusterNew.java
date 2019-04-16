@@ -51,7 +51,7 @@ public class TestStochasticLoadBalancerMidClusterNew extends BalancerTestBaseNew
     testWithCluster(numNodes, numRegions, numRegionsPerServer, replication, numTables, true, true);
   }
 
-  /*@Test
+  @Test
   public void testMidCluster2() {
     int numNodes = 200;
     int numRegions = 100000;
