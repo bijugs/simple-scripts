@@ -553,7 +553,7 @@ public class BalancerTestBaseNew {
     for (Map.Entry<ServerName, List<RegionInfo>> rInfo : serverMap.entrySet()) {
       Iterator<RegionInfo> rI = rInfo.getValue().iterator();
       serverWeights.put(rInfo.getKey(), weight);
-      weight += 50;
+      weight += 0;
       while (rI.hasNext()) {
     	  reads = rand.nextInt(10000);
     	  writes = rand.nextInt(10000);
@@ -573,7 +573,7 @@ public class BalancerTestBaseNew {
       }
     }
 
-    loadBalancer.setRegionLoad(loads);
+    //loadBalancer.setRegionLoad(loads);
     loadBalancer.setRackManager(rackManager);
     // Run the balancer.
     List<RegionPlan> plans = loadBalancer.balanceCluster(serverMap, serverWeights);
@@ -606,15 +606,30 @@ public class BalancerTestBaseNew {
 			boolean assertFullyBalancedForReplicas) {
 		Map<ServerName, List<RegionInfo>> serverMap = createServerMap(numNodes, numRegions, numRegionsPerServer,
 				replication, numTables);
+		HashMap<TableName, TreeMap<ServerName, List<RegionInfo>>> result = mockClusterServersWithTables(serverMap);
+		testWithClusterTables(serverMap, result, null, assertFullyBalanced, assertFullyBalancedForReplicas);
+	}
+	
+	protected void testWithClusterTables(Map<ServerName, List<RegionInfo>> serverMap, 
+			Map<TableName, TreeMap<ServerName, List<RegionInfo>>> serverTableMap,
+	        RackManager rackManager, 
+	        boolean assertFullyBalanced, 
+	        boolean assertFullyBalancedForReplicas) {
 		long reads;
 		long writes;
 		long cp;
 		int memSt;
 		int stFile;
+	    List<ServerAndLoad> list = convertToList(serverMap);
+	    Map<ServerName, Integer> serverWeights = new HashMap<>();
+	    LOG.info("Mock Cluster : " + printMock(list) + " " + printStats(list));
 	    Random rand = ThreadLocalRandom.current();
 	    Map<String, Deque<BalancerRegionLoad>> loads = new HashMap<>();
+	    int weight = 100;
 	    for (Map.Entry<ServerName, List<RegionInfo>> rInfo : serverMap.entrySet()) {
 	      Iterator<RegionInfo> rI = rInfo.getValue().iterator();
+	      serverWeights.put(rInfo.getKey(), weight);
+	      weight += 0;
 	      while (rI.hasNext()) {
 	    	  reads = rand.nextInt(10000);
 	    	  writes = rand.nextInt(10000);
@@ -633,24 +648,13 @@ public class BalancerTestBaseNew {
 	    	  loads.put(regionName, rLoadDeque);
 	      }
 	    }
-		HashMap<TableName, TreeMap<ServerName, List<RegionInfo>>> result = mockClusterServersWithTables(serverMap);
-		testWithClusterTables(serverMap, loads, result, null, assertFullyBalanced, assertFullyBalancedForReplicas);
-	}
-	
-	protected void testWithClusterTables(Map<ServerName, List<RegionInfo>> serverMap, 
-		    Map<String, Deque<BalancerRegionLoad>> loads,
-			Map<TableName, TreeMap<ServerName, 
-			List<RegionInfo>>> serverTableMap,
-	        RackManager rackManager, 
-	        boolean assertFullyBalanced, 
-	        boolean assertFullyBalancedForReplicas) {
-		loadBalancer.setRegionLoad(loads);
+		//loadBalancer.setRegionLoad(loads);
 	    loadBalancer.setRackManager(rackManager);
-		List<ServerAndLoad> list = convertToList(serverMap);
-	    LOG.info("Mock Cluster : " + printMock(list) + " " + printStats(list));
+		//List<ServerAndLoad> list = convertToList(serverMap);
+	    //LOG.info("Mock Cluster : " + printMock(list) + " " + printStats(list));
 		List<RegionPlan> plans = new ArrayList<>();
 		for (Entry<TableName, TreeMap<ServerName, List<RegionInfo>>> e : serverTableMap.entrySet()) {
-			List<RegionPlan> partialPlans = loadBalancer.balanceCluster(e.getKey(), e.getValue());
+			List<RegionPlan> partialPlans = loadBalancer.balanceCluster(e.getKey(), e.getValue(), serverWeights);
 			if (partialPlans != null)
 				plans.addAll(partialPlans);
 		}

@@ -326,6 +326,13 @@ public class StochasticLoadBalancerNew extends BaseLoadBalancer {
     this.tableName = tableName;
     return balanceCluster(clusterState);
   }
+  
+
+  public synchronized List<RegionPlan> balanceCluster(TableName tableName, Map<ServerName,
+    List<RegionInfo>> clusterState, Map<ServerName, Integer> serverWeights) {
+    this.tableName = tableName;
+    return balanceCluster(clusterState, serverWeights);
+  }
 
   @VisibleForTesting
   Cluster.Action nextAction(Cluster cluster) {
@@ -372,7 +379,7 @@ public class StochasticLoadBalancerNew extends BaseLoadBalancer {
     //of all the regions in the table(s) (that's true today)
     // Keep track of servers to iterate through them.
     Cluster cluster = new Cluster(clusterState, loads, finder, rackManager, serversWeights);
-	cluster.printTableRegions();
+	//cluster.printTableRegions();
 	
     long startTime = EnvironmentEdgeManager.currentTime();
 
@@ -447,7 +454,7 @@ public class StochasticLoadBalancerNew extends BaseLoadBalancer {
       }
     }
     long endTime = EnvironmentEdgeManager.currentTime();
-	cluster.printTableRegions();
+	//cluster.printTableRegions();
     metricsBalancer.balanceCluster(endTime - startTime);
 
     // update costs metrics
@@ -628,7 +635,7 @@ public class StochasticLoadBalancerNew extends BaseLoadBalancer {
         break;
       }
     }
-    //LOG.info("Cost {}",total);
+    LOG.info("Cost {}",total);
     return total;
   }
 
@@ -1071,6 +1078,7 @@ public class StochasticLoadBalancerNew extends BaseLoadBalancer {
       // Compute max as if all region servers had 0 and one had the sum of all costs.  This must be
       // a zero sum cost for this to make sense.
       double max = ((count - 1) * mean) + (total - mean);
+      //double max = total;
 
       // It's possible that there aren't enough regions to go around
       double min;

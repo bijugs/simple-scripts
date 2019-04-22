@@ -49,9 +49,9 @@ public class TestStochasticLoadBalancerMidClusterNew extends BalancerTestBaseNew
     int replication = 1;
     int numTables = 40;
     testWithCluster(numNodes, numRegions, numRegionsPerServer, replication, numTables, true, true);
-  }
+  }*/
 
-  @Test
+  /*@Test
   public void testMidCluster2() {
     int numNodes = 200;
     int numRegions = 100000;
@@ -73,9 +73,9 @@ public class TestStochasticLoadBalancerMidClusterNew extends BalancerTestBaseNew
     int numTables = 110;
     testWithCluster(numNodes, numRegions, numRegionsPerServer, replication, numTables, true, true);
     // TODO(eclark): Make sure that the tables are well distributed.
-  }
+  }*/
   
-  @Test
+  /*@Test
   public void testMidClusterTables0() {
     int numNodes = 5;
     int numRegions = 50;

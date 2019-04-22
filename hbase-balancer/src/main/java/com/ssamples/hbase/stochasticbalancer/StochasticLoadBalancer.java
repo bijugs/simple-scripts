@@ -323,6 +323,13 @@ public class StochasticLoadBalancer extends BaseLoadBalancer {
     this.tableName = tableName;
     return balanceCluster(clusterState);
   }
+  
+
+  public synchronized List<RegionPlan> balanceCluster(TableName tableName, Map<ServerName,
+    List<RegionInfo>> clusterState, Map<ServerName, Integer> serverWeights) {
+    this.tableName = tableName;
+    return balanceCluster(clusterState, serverWeights);
+  }
 
   @VisibleForTesting
   Cluster.Action nextAction(Cluster cluster) {
@@ -369,7 +376,7 @@ public class StochasticLoadBalancer extends BaseLoadBalancer {
     //of all the regions in the table(s) (that's true today)
     // Keep track of servers to iterate through them.
     Cluster cluster = new Cluster(clusterState, loads, finder, rackManager, serversWeights);
-	cluster.printTableRegions();
+	//cluster.printTableRegions();
     long startTime = EnvironmentEdgeManager.currentTime();
 
     initCosts(cluster);
@@ -379,6 +386,7 @@ public class StochasticLoadBalancer extends BaseLoadBalancer {
     }
 
     double currentCost = computeCost(cluster, Double.MAX_VALUE);
+    LOG.info("Initcost {}", currentCost);
     curOverallCost = currentCost;
     for (int i = 0; i < this.curFunctionCosts.length; i++) {
       curFunctionCosts[i] = tempFunctionCosts[i];
@@ -443,7 +451,7 @@ public class StochasticLoadBalancer extends BaseLoadBalancer {
       }
     }
     long endTime = EnvironmentEdgeManager.currentTime();
-	cluster.printTableRegions();
+	//cluster.printTableRegions();
     metricsBalancer.balanceCluster(endTime - startTime);
 
     // update costs metrics
@@ -624,7 +632,7 @@ public class StochasticLoadBalancer extends BaseLoadBalancer {
         break;
       }
     }
-    //LOG.info("Cost {}",total);
+    LOG.info("Cost {}",total);
     return total;
   }
 
@@ -1117,26 +1125,6 @@ public class StochasticLoadBalancer extends BaseLoadBalancer {
     }
   }
 
-  static class ServerResourceCostFunction extends CostFunction {
-	  
-	float multiplier = 500;
-	  
-	float getMultiplier() {
-	    return multiplier;
-	}
-
-	ServerResourceCostFunction(Configuration c) {
-		super(c);
-		// TODO Auto-generated constructor stub
-	}
-
-	@Override
-	double cost() {
-		// TODO Auto-generated method stub
-		return cluster.getRegionAllocationSkew();
-	}
-	  
-  }
   /**
    * Given the starting state of the regions and a potential ending state
    * compute cost based upon the number of regions that have moved.
