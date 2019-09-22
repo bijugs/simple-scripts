@@ -1,0 +1,16 @@
+.config/gcloud/logs
+.config/gcloud/access_tokens.db
+.kubeconfig
+.kube
+.viminfo
+.gsutil
+.bash_history
+.config/gcloud
+.docker
+snap
+.lesshst
+.httpie
+.helm
+.cache/code-server
+.local/share/code-server
+!.docker/config.json

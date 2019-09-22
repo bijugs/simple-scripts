@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "Running:"
+# CHANGEME: We want the names of all running containers
+running="$(docker ps)"
+for name in $running; do
+  echo "  $name"
+  # CHANGEME: We want the ports from from the $name container.  For this,
+  # you'll need to --format just the ports (you can find the key via `docker ps
+  # --format="{{json .}}"`), and you'll want to --filter to just the containers
+  # matching the given name.
+  ports="$(docker ps)"
+  echo "    Exposed: $ports"
+  echo "    Volumes:"
+
+  # CHANGEME: here we want to print the mounts, one on each line, like:
+  #   src -> dst
+  # You'll need to `{{range}}` and indent and format each line correctly.
+  docker inspect "$name"
+done
+
+echo "Exited:"
+# CHANGEME: We want the names of all exited containers.  You'll have to break
+# out both --format and --filter here.
+exited="$(docker ps)"
+for name in $exited; do
+  # CHANGEME:  `code` should be set to the Exit Code from the dead container.
+  code="$(docker inspect "$name")"
+  echo "  $name exited with code $code"
+done

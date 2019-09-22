@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+LOGFILE="/tmp/lab-cluster.log"
+echo > "$LOGFILE"
+
+set -eou pipefail
+
+run() {
+  echo -e "\n$"  "$@" >> "$LOGFILE"
+  eval "$*"           >> "$LOGFILE" 2>&1
+}
+
+usage() {
+  local message=$1
+  echo "ERROR: $message"
+  echo "USAGE: $(basename "$0") [wipe|login]"
+  echo
+  exit 1
+}
+
+wipe() {
+  namespaces="$(kubectl get namespaces -o jsonpath={..name} | tr ' ' '\n' | grep -v -E -- '-system|-public')"
+  for namespace in $namespaces; do
+    run kubectl delete --all --wait=true all --namespace="$namespace"
+  done
+  rm -rf ~/.kube
+}
+
+create() {
+  echo "Creating:"
+  extra_cluster_opts=("$@")
+  echo "  Cluster..."
+  extra_opts_from_file=""
+  [[ -f ~/.extra-cluster-options ]] && extra_opts_from_file="$(< ~/.extra-cluster-options)"
+  run gcloud beta container clusters create lab \
+    --region="$CLOUDSDK_COMPUTE_REGION" \
+    --no-enable-ip-alias \
+    --scopes=cloud-platform \
+    --image-type=cos_containerd \
+    --cluster-version="1.13" \
+    --num-nodes=1 \
+    --machine-type=n1-standard-2  \
+    --enable-network-policy \
+    --no-enable-autoupgrade \
+    --maintenance-window=06:00 \
+    --disk-size=30GB \
+    --tags=node $extra_opts_from_file "${extra_cluster_opts[@]}"
+
+  echo "  Firewall rules..."
+  run gcloud compute firewall-rules create nodeport --allow=tcp:30000-32767,icmp
+
+  login
+
+  # I think this isn't needed.  Student IAM is already cluster admin at google
+  # level.
+  #
+  # echo "  Elevating student to cluster admin..."
+  # run kubectl create clusterrolebinding cluster-admin-binding \
+  #   --clusterrole=cluster-admin \
+  #   --user="student@${CLOUDSDK_CORE_PROJECT}.iam.gserviceaccount.com"
+
+  echo "  Tiller service account..."
+  run kubectl create serviceaccount --namespace kube-system tiller
+  run kubectl create clusterrolebinding tiller \
+    --clusterrole=cluster-admin \
+    --serviceaccount=kube-system:tiller
+  echo "  Initializing Helm..."
+  run helm init --service-account tiller --upgrade
+}
+
+destroy() {
+  echo "Destroying:"
+  rm -rf "$HELM_HOME"
+  rm -f  "$KUBECONFIG"
+
+  echo "  Cluster..."
+  run gcloud container clusters delete --region="$CLOUDSDK_COMPUTE_REGION" lab || true
+  echo "  Firewall Rules..."
+  run gcloud compute firewall-rules delete nodeport || true
+  echo "  Addresses..."
+  # shellcheck disable=SC2046
+  run gcloud compute addresses delete --global $(gcloud compute addresses list --format='value(name)' --filter="name!=workstation") || true
+}
+
+recreate() {
+  echo "Recreating cluster."
+  destroy
+  create "$@"
+}
+
+login() {
+  # Note: it might be better to add all discovered clusters as kubeconfig contexts.
+  cluster_name=${1:-lab}
+  echo "Logging into $cluster_name"
+  for project in $CLOUDSDK_CORE_PROJECT superorbital-workshop-wargames; do
+    json="$(gcloud container clusters list \
+              --project="$project" \
+              --filter="name=$cluster_name" \
+              --format=json)"
+    if [[ "[]" != "$json" ]]; then
+      zone="$(echo "$json" | jq -r '.[].zone')"
+      run gcloud container clusters get-credentials "$cluster_name" --project="$project" --zone="$zone"
+      run kubectl config delete-context "$cluster_name" || true
+      run kubectl config rename-context "$(kubectl config current-context)" "$cluster_name"
+      break
+    fi
+  done
+  run helm init --client-only
+}
+
+[[ $# -gt 0 ]] || usage "Must supply command."
+
+command=$1; shift
+case $command in
+  "wipe")     wipe          ;;
+  "create")   create "$@"   ;;
+  "recreate") recreate "$@" ;;
+  "destroy")  destroy       ;;
+  "login")    login "$@"    ;;
+  *)
+    usage "Unrecognised command"
+    ;;
+esac
+
+printf 'Finished in %dm:%ds\n' $((SECONDS % 3600 / 60)) $((SECONDS % 60))
+
+# vim: nofoldenable

@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: "20%"
+      maxSurge: "20%"
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: superorbital/example:v8
+        resources:
+          requests:
+            memory: "64Mi"
+          limits:
+            memory: "64Mi"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: "20%"
+      maxSurge: "20%"
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: superorbital/prism:latest
+        resources:
+          requests:
+            memory: "64Mi"
+          limits:
+            memory: "64Mi"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: frontend
+spec:
+  type: LoadBalancer
+  selector:
+    app: frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: http
