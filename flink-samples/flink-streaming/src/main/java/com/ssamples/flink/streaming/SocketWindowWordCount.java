@@ -1,5 +1,7 @@
 package com.ssamples.flink.streaming;
 
+import org.apache.flink.api.common.functions.AbstractRichFunction;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,21 +22,29 @@ package com.ssamples.flink.streaming;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
+import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.source.SocketTextStreamFunction;
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 /**
  * Implements a streaming windowed version of the "WordCount" program.
  *
- * <p>This program connects to a server socket and reads strings from the socket.
+ * <p>
+ * This program connects to a server socket and reads strings from the socket.
  * The easiest way to try this out is to open a text server (at port 12345)
  * using the <i>netcat</i> tool via
+ * 
  * <pre>
  * nc -l 12345 on Linux or nc -l -p 12345 on Windows
  * </pre>
+ * 
  * and run this example with the hostname and the port as arguments.
  */
 @SuppressWarnings("serial")
@@ -47,14 +57,14 @@ public class SocketWindowWordCount {
 		final int port;
 		try {
 			final ParameterTool params = ParameterTool.fromArgs(args);
-			hostname = params.has("hostname") ? params.get("hostname") : "localhost";
-			port = params.getInt("port");
+			hostname = params.has("hostname") ? params.get("hostname") : "datagen";
+			port = params.has("port") ? params.getInt("port") : 9000;
 		} catch (Exception e) {
-			System.err.println("No port specified. Please run 'SocketWindowWordCount " +
-				"--hostname <hostname> --port <port>', where hostname (localhost by default) " +
-				"and port is the address of the text server");
-			System.err.println("To start a simple text server, run 'netcat -l <port>' and " +
-				"type the input text into the command line");
+			System.err.println("No port specified. Please run 'SocketWindowWordCount "
+					+ "--hostname <hostname> --port <port>', where hostname (localhost by default) "
+					+ "and port is the address of the text server");
+			System.err.println("To start a simple text server, run 'netcat -l <port>' and "
+					+ "type the input text into the command line");
 			return;
 		}
 
@@ -62,7 +72,9 @@ public class SocketWindowWordCount {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		// get input data by connecting to the socket
-		DataStream<String> text = env.socketTextStream(hostname, port, "\n");
+		DataStream<String> text = env.socketTextStream(hostname, port, "\n", 60L);
+
+		env.enableCheckpointing(5000);
 
 		// parse the data, group it, window it, and aggregate the counts
 		DataStream<WordWithCount> windowCounts = text
@@ -76,8 +88,7 @@ public class SocketWindowWordCount {
 					}
 				})
 
-				.keyBy("word")
-				.timeWindow(Time.seconds(5))
+				.keyBy("word").timeWindow(Time.seconds(5))
 
 				.reduce(new ReduceFunction<WordWithCount>() {
 					@Override
@@ -102,7 +113,8 @@ public class SocketWindowWordCount {
 		public String word;
 		public long count;
 
-		public WordWithCount() {}
+		public WordWithCount() {
+		}
 
 		public WordWithCount(String word, long count) {
 			this.word = word;
