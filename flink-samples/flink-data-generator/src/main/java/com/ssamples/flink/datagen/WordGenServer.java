@@ -28,10 +28,14 @@ public class WordGenServer extends Thread {
 			while (true) {
 				out.println(dictionary.get(randomNum));
 				randomNum = ThreadLocalRandom.current().nextInt(0, dictionary.size());
+				Thread.sleep(500);
 			}
 		} catch (IOException e) {
 			System.out.println("Exception caught when trying to output data to client");
 			System.out.println(e.getMessage());
+		} catch (InterruptedException e) {
+			System.out.println("Sleep interrupted in data gen server");
+			e.printStackTrace();
 		}
 	}
 

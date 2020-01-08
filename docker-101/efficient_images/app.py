@@ -4,7 +4,7 @@ import click
 
 @click.command()
 def hello():
-    click.echo('Hello SuperOrbital!')
+    click.echo('Hello Super Orbital!')
 
 if __name__ == '__main__':
     hello()
