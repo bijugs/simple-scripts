@@ -7,4 +7,4 @@ target/
 .settings/
 ./.project
 *.jar
-*.txt
+flink-data-generator/docker/*.txt

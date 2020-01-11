@@ -9,7 +9,7 @@
   </parent>
   <groupId>com.ssamples.flink.streaming</groupId>
   <artifactId>flink-streaming</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>2.0-SNAPSHOT</version>
   <name>flink-streaming</name>
   <url>http://maven.apache.org</url>
   <dependencies>
@@ -19,11 +19,6 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-core</artifactId>
-      <version>1.6.2</version>
-    </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-streaming-java -->
     <dependency>
       <groupId>org.apache.flink</groupId>
@@ -31,31 +26,45 @@
       <version>1.6.2</version>
       <scope>provided</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-connector-kafka -->
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-connector-kafka_2.11</artifactId>
+      <version>1.7.0</version>
+    </dependency>
   </dependencies>
   <build>
-  <plugins>
-<plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-assembly-plugin</artifactId>
-  <executions>
-    <execution>
-      <phase>package</phase>
-      <goals>
-        <goal>single</goal>
-      </goals>
-      <configuration>
-        <archive>
-          <manifest>
-            <mainClass>com.ssamples.flink.streaming.SocketWindowWordCount</mainClass>
-          </manifest>
-        </archive>
-        <descriptorRefs>
-          <descriptorRef>jar-with-dependencies</descriptorRef>
-        </descriptorRefs>
-      </configuration>
-    </execution>
-  </executions>
-</plugin>
-  </plugins>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.2.1</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <archive>
+                <manifest>
+                  <mainClass>com.ssamples.flink.streaming.KafkaTickerAggregator</mainClass>
+                </manifest>
+              </archive>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 </project>

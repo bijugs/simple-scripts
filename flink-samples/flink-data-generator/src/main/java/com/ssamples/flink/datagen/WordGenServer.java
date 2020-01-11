@@ -45,7 +45,7 @@ public class WordGenServer extends Thread {
 		ServerSocket serverSocket = null;
 
 		if (args.length == 0) {
-			System.out.println("Need to pass in the location of dictionary");
+			System.out.println("Need to pass in the location of dictionary file");
 			System.exit(1);
 		}
 		System.out.println("Using dictionary at " + args[0]);

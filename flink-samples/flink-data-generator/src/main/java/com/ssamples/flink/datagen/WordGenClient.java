@@ -30,7 +30,7 @@ public class WordGenClient {
 		Socket socket = null;
 
 		// establish socket connection to server
-		socket = new Socket(hostName, 9000);
+		socket = new Socket(hostName, portNumber);
 		// read the server response message
 		BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		String serverInput;
