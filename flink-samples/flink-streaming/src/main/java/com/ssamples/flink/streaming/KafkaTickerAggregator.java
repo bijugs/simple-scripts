@@ -39,7 +39,6 @@ public class KafkaTickerAggregator {
 
 		KeyedStream<Ticker, String> tickerBuySellStream = stream.map(data -> {
 			try {
-				System.out.println("You got better eyes");
 				return OM.readValue(data, Ticker.class);
 			} catch (Exception e) {
 				LOG.info("exception reading data: " + data);

@@ -22,7 +22,7 @@ public class TickerAggregatorBySymbol
 	@Override
 	public Tuple2<String, Long> add(Ticker value, Tuple2<String, Long> accumulator) {
 		accumulator.f0 = value.getId();
-		accumulator.f1 += 1;
+		accumulator.f1 += value.getTickerCount();
 		return accumulator;
 	}
 
