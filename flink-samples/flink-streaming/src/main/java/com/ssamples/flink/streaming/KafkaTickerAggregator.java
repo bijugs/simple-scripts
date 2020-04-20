@@ -5,6 +5,7 @@ import java.util.Properties;
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
@@ -23,15 +24,27 @@ public class KafkaTickerAggregator {
 
 	public static void main(String[] args) throws Exception {
 
+		final String brokerList;
+		final String kafkaTopic;
+		try {
+			final ParameterTool params = ParameterTool.fromArgs(args);
+			brokerList = params.get("brokers");
+			kafkaTopic = params.get("topic");
+		} catch (Exception e) {
+			System.err.println("No broker/topic specified. Please run 'KafkaTickerAggregator "
+					+ "--brokers <broker:port> --topic <kafka-topic> ");
+			return;
+		}
+
 		final StreamExecutionEnvironment see = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		Properties properties = new Properties();
-		properties.setProperty("bootstrap.servers", "localhost:9092");
+		properties.setProperty("bootstrap.servers", brokerList);
 		properties.setProperty("group.id", "KafkaTickerAggregator");
 		LOG.info("Properties set {}", properties);
 		System.out.println("Hey Hey.. you got some eyes");
 
-		FlinkKafkaConsumer<String> kafkaSource = new FlinkKafkaConsumer<>("test", new SimpleStringSchema(), properties);
+		FlinkKafkaConsumer<String> kafkaSource = new FlinkKafkaConsumer<>(kafkaTopic, new SimpleStringSchema(), properties);
 		DataStream<String> stream = see.addSource(kafkaSource);
 
 		LOG.info("stream created, {}", stream);

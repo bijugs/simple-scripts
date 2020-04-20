@@ -55,7 +55,8 @@
             <configuration>
               <archive>
                 <manifest>
-                  <mainClass>com.ssamples.flink.streaming.KafkaTickerAggregator</mainClass>
+                  <mainClass>com.ssamples.flink.streaming.SocketWindowWordCount</mainClass>
+                  <!-- <mainClass>com.ssamples.flink.streaming.KafkaTickerAggregator</mainClass> -->
                 </manifest>
               </archive>
               <descriptorRefs>
